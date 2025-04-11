@@ -1,8 +1,8 @@
 import * as cookies from 'cookie-parser';
 import { NestFactory } from '@nestjs/core';
 import { ConfigService } from '@nestjs/config';
-import { ValidationPipe } from '@nestjs/common';
 import { AppModule } from './app.module';
+import { CustomValidationPipe } from './pipes/custom-pipe';
 
 (async () => {
   const app = await NestFactory.create(AppModule);
@@ -19,11 +19,7 @@ import { AppModule } from './app.module';
     origin: CLIENT_URL
   });
 
-  app.useGlobalPipes(new ValidationPipe({
-    whitelist: true,
-    transform: true,
-    forbidNonWhitelisted: true
-  }));
+  app.useGlobalPipes(new CustomValidationPipe());
 
   await app.listen(PORT, () => {
     console.log('Server running on port:', PORT);

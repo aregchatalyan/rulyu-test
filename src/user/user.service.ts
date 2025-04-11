@@ -15,7 +15,9 @@ export class UserService {
 
     return {
       success: true,
-      result: user.id
+      result: {
+        id: user.id
+      }
     }
   }
 
@@ -43,7 +45,7 @@ export class UserService {
 
       return {
         success: true,
-        result: users
+        result: { users }
       };
     }
 
@@ -61,10 +63,15 @@ export class UserService {
     });
     if (!exists) throw new CustomErrorException(`User with id ${ userId } not found`, 404);
 
-    return this.prisma.user.update({
+    const user = await this.prisma.user.update({
       where: { id: userId },
       data: dto
     });
+
+    return {
+      success: true,
+      result: user
+    }
   }
 
   async delete(userId?: number) {
