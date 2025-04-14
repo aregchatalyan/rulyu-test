@@ -3,6 +3,7 @@ import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { PrismaService } from '../prisma/prisma.service';
 import { CustomErrorException } from '../exceptions/custom-exception';
+import { GetUserQueryDto } from './dto/get-user.dto';
 
 @Injectable()
 export class UserService {
@@ -21,35 +22,14 @@ export class UserService {
     }
   }
 
-  async get(userId?: number, role?: string) {
-    if (Number.isNaN(userId)) {
-      throw new CustomErrorException('Validation failed (numeric string is expected)', 400);
-    }
-
-    if (userId) {
-      const user = await this.prisma.user.findFirst({
-        where: { id: userId }
-      });
-      if (!user) throw new CustomErrorException(`User with id ${ userId } not found`, 404);
-
-      return {
-        success: true,
-        result: user
+  async getAll(query: GetUserQueryDto) {
+    const users = await this.prisma.user.findMany({
+      where: {
+        full_name: { contains: query.full_name },
+        role: query.role,
+        efficiency: query.efficiency
       }
-    }
-
-    if (role) {
-      const users = await this.prisma.user.findMany({
-        where: { role }
-      });
-
-      return {
-        success: true,
-        result: { users }
-      };
-    }
-
-    const users = await this.prisma.user.findMany();
+    });
 
     return {
       success: true,
@@ -57,16 +37,11 @@ export class UserService {
     }
   }
 
-  async update(userId: number, dto: UpdateUserDto) {
-    const exists = await this.prisma.user.findFirst({
+  async get(userId: number) {
+    const user = await this.prisma.user.findUnique({
       where: { id: userId }
     });
-    if (!exists) throw new CustomErrorException(`User with id ${ userId } not found`, 404);
-
-    const user = await this.prisma.user.update({
-      where: { id: userId },
-      data: dto
-    });
+    if (!user) throw new CustomErrorException(`User with id ${ userId } not found`, 404);
 
     return {
       success: true,
@@ -74,28 +49,40 @@ export class UserService {
     }
   }
 
-  async delete(userId?: number) {
-    if (Number.isNaN(userId)) {
-      throw new CustomErrorException('Validation failed (numeric string is expected)', 400);
-    }
+  async update(userId: number, dto: UpdateUserDto) {
+    try {
+      const user = await this.prisma.user.update({
+        where: { id: userId },
+        data: dto
+      });
 
-    if (userId) {
-      try {
-        const user = await this.prisma.user.delete({
-          where: { id: userId }
-        });
-
-        return {
-          success: true,
-          result: user
-        }
-      } catch (e) {
-        throw new CustomErrorException(`User with id ${ userId } not found`, 404);
+      return {
+        success: true,
+        result: user
       }
+    } catch (e) {
+      throw new CustomErrorException(`User with id ${ userId } not found`, 404);
     }
+  }
 
+  async deleteAll() {
     await this.prisma.user.deleteMany();
 
     return { success: true }
+  }
+
+  async delete(userId: number) {
+    try {
+      const user = await this.prisma.user.delete({
+        where: { id: userId }
+      });
+
+      return {
+        success: true,
+        result: user
+      }
+    } catch (e) {
+      throw new CustomErrorException(`User with id ${ userId } not found`, 404);
+    }
   }
 }

@@ -3,6 +3,7 @@ import { NestFactory } from '@nestjs/core';
 import { ConfigService } from '@nestjs/config';
 import { AppModule } from './app.module';
 import { CustomValidationPipe } from './pipes/custom-pipe';
+import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 
 (async () => {
   const app = await NestFactory.create(AppModule);
@@ -20,6 +21,17 @@ import { CustomValidationPipe } from './pipes/custom-pipe';
   });
 
   app.useGlobalPipes(new CustomValidationPipe());
+
+  const swaggerConfig = new DocumentBuilder()
+    .addBearerAuth()
+    .setTitle('Rulyou API')
+    .setDescription('Created by Nest.js')
+    .setVersion('1.0')
+    .build();
+
+  SwaggerModule.setup('', app, () => {
+    return SwaggerModule.createDocument(app, swaggerConfig);
+  }, { swaggerOptions: { defaultModelsExpandDepth: -1 } });
 
   await app.listen(PORT, () => {
     console.log('Server running on port:', PORT);
